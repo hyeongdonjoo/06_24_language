@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.google.firebase.firestore.FirebaseFirestore
@@ -17,25 +18,44 @@ class MenuActivity : AppCompatActivity() {
     private lateinit var menuContainer: LinearLayout
     private lateinit var shopName: String
     private lateinit var categoryContainer: LinearLayout
-    private var selectedCategory: String = "" // 기본 카테고리 빈 값으로 시작
-
-    // 가게별 카테고리 맵
-    private val categoryMap = mapOf(
-        "버거킹" to listOf("버거단품", "세트", "사이드", "음료&디저트"),
-        "김밥천국" to listOf("김밥류", "덮밥류", "분식류", "면류"),
-        "스타벅스" to listOf("에스프레소", "콜드브루", "리프레셔", "케이크")
-    )
-
-    // 눌린 메뉴 이름 저장용 Set
+    private var selectedCategory: String = ""
     private val selectedMenuNames = mutableSetOf<String>()
+
+    private val categoryMapLocalized = mapOf(
+        "ko" to mapOf(
+            "버거킹" to listOf("버거단품", "세트", "사이드", "음료&디저트"),
+            "김밥천국" to listOf("김밥류", "덮밥류", "분식류", "면류"),
+            "스타벅스" to listOf("에스프레소", "콜드브루", "리프레셔", "케이크")
+        ),
+        "en" to mapOf(
+            "버거킹" to listOf("Burger", "Set", "Side", "Drink & Dessert"),
+            "김밥천국" to listOf("Gimbap", "Rice Bowl", "Snacks", "Noodles"),
+            "스타벅스" to listOf("Espresso", "Cold Brew", "Refresher", "Cake")
+        ),
+        "ja" to mapOf(
+            "버거킹" to listOf("バーガー", "セット", "サイドメニュー", "ドリンク・デザート"),
+            "김밥천국" to listOf("キンパ", "丼もの", "粉もの", "麺類"),
+            "스타벅스" to listOf("エスプレッソ", "コールドブリュー", "リフレッシャー", "ケーキ")
+        ),
+        "zh" to mapOf(
+            "버거킹" to listOf("汉堡", "套餐", "配餐", "饮品与甜点"),
+            "김밥천국" to listOf("紫菜包饭", "盖饭", "韩式小吃", "面类"),
+            "스타벅스" to listOf("浓缩咖啡", "冷萃咖啡", "清爽饮品", "蛋糕")
+        )
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
+        LocaleHelper.setLocale(this, LocaleHelper.getSavedLanguage(this))
         setContentView(R.layout.activity_menu)
 
         findViewById<Button>(R.id.buttonBack).setOnClickListener {
             finish()
+        }
+
+        findViewById<Button>(R.id.buttonLanguage).setOnClickListener {
+            showLanguageDialog()
         }
 
         shopName = intent.getStringExtra("shopName") ?: ""
@@ -66,9 +86,24 @@ class MenuActivity : AppCompatActivity() {
         checkShopExistsAndLoadMenus()
     }
 
+    private fun showLanguageDialog() {
+        val languages = arrayOf("한국어", "English", "日本語", "中文")
+        val codes = arrayOf("ko", "en", "ja", "zh")
+
+        AlertDialog.Builder(this)
+            .setTitle("언어 선택")
+            .setItems(languages) { _, which ->
+                LocaleHelper.saveLanguage(this, codes[which])
+                LocaleHelper.setLocale(this, codes[which])
+                recreate()
+            }
+            .show()
+    }
+
     private fun setupCategoryButtons() {
         categoryContainer.removeAllViews()
-        val categories = categoryMap[shopName] ?: listOf()
+        val lang = LocaleHelper.getSavedLanguage(this)
+        val categories = categoryMapLocalized[lang]?.get(shopName) ?: listOf()
 
         if (categories.isEmpty()) {
             showToast("이 가게에 카테고리 정보가 없습니다.")
@@ -130,31 +165,47 @@ class MenuActivity : AppCompatActivity() {
         db.collection("shops")
             .document(shopName)
             .collection("menus")
-            .whereEqualTo("category", selectedCategory)
             .get()
             .addOnSuccessListener { documents ->
                 Log.d("MenuActivity", "✅ 메뉴 ${documents.size()}개 불러옴")
-                if (documents.isEmpty) {
-                    showToast("❗ 해당 카테고리에 메뉴가 없습니다")
-                    menuContainer.removeAllViews()
-                    return@addOnSuccessListener
-                }
-
                 menuContainer.removeAllViews()
 
+                val lang = LocaleHelper.getSavedLanguage(this)
+
                 for (doc in documents) {
-                    val menu = doc.toObject(MenuItem::class.java)
-                    if (menu.name.isBlank()) {
-                        Log.w("MenuActivity", "빈 이름 메뉴 스킵 문서ID: ${doc.id}")
-                        continue
+                    val data = doc.data
+                    val nameMap = data["name"] as? Map<*, *> ?: continue
+                    val descMap = data["desc"] as? Map<*, *> ?: continue
+                    val categoryMap = data["category"] as? Map<*, *> ?: continue
+
+                    val name = getLocalizedText(nameMap, lang)
+                    val desc = getLocalizedText(descMap, lang)
+                    val category = getLocalizedText(categoryMap, lang)
+
+                    val menu = MenuItem(
+                        name = name,
+                        desc = desc,
+                        price = (data["price"] as? Long)?.toInt() ?: 0,
+                        image = data["image"] as? String ?: "",
+                        category = category
+                    )
+
+                    if (menu.category == selectedCategory) {
+                        addMenuCard(menu)
                     }
-                    addMenuCard(menu)
                 }
             }
             .addOnFailureListener { e ->
                 showToast("❗ 메뉴 불러오기 실패")
                 Log.e("MenuActivity", "🔥 메뉴 로딩 실패", e)
             }
+    }
+
+    private fun getLocalizedText(map: Map<*, *>, lang: String): String {
+        return map[lang]?.toString()
+            ?: map["en"]?.toString()
+            ?: map["ko"]?.toString()
+            ?: ""
     }
 
     private fun addMenuCard(menu: MenuItem) {
@@ -170,11 +221,19 @@ class MenuActivity : AppCompatActivity() {
                 selectedMenuNames.remove(menu.name)
                 menuRoot.setBackgroundColor(Color.WHITE)
                 CartManager.removeOneItem(menu.name)
-                showToast("${menu.name} 빼졌습니다")
+                showToast("${menu.name} 빠졌습니다")
             } else {
                 selectedMenuNames.add(menu.name)
                 menuRoot.setBackgroundColor(Color.parseColor("#66000000"))
-                CartManager.addItem(CartItem(menu.name, menu.price, 1))
+                CartManager.addItem(
+                    CartItem(
+                        name = menu.name,
+                        desc = menu.desc,
+                        category = menu.category,
+                        price = menu.price,
+                        quantity = 1
+                    )
+                )
                 showToast("${menu.name} 담았습니다")
             }
         }

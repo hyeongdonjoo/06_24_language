@@ -12,17 +12,38 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- 🔙 뒤로가기 버튼 -->
-        <Button
-            android:id="@+id/buttonBack"
-            android:layout_width="wrap_content"
+        <!-- 🔙 뒤로가기 + 🌐 언어 변경 버튼 수평 정렬 -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="← 뒤로가기"
-            android:textColor="@color/button_primary"
-            android:background="@android:color/transparent"
-            android:textSize="20sp"
-            android:padding="10dp"
-            android:layout_marginBottom="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <Button
+                android:id="@+id/buttonBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← 뒤로가기"
+                android:textColor="@color/button_primary"
+                android:background="@android:color/transparent"
+                android:textSize="20sp"
+                android:padding="10dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/buttonLanguage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌐 언어 변경"
+                android:textColor="@color/button_primary"
+                android:background="@android:color/transparent"
+                android:textSize="18sp" />
+        </LinearLayout>
 
         <!-- 타이틀 -->
         <TextView
@@ -42,11 +63,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginBottom="12dp">
-            <!--
-              기존 버튼 삭제 후, 여기에 MenuActivity.kt에서 동적 생성한 버튼들이 들어감
-            -->
-        </LinearLayout>
+            android:layout_marginBottom="12dp" />
 
         <!-- 메뉴 리스트가 들어갈 컨테이너 -->
         <LinearLayout
@@ -66,5 +83,6 @@
             android:textColor="@android:color/white"
             android:background="@color/button_primary"
             android:padding="14dp" />
+
     </LinearLayout>
 </ScrollView>

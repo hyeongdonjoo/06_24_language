@@ -32,12 +32,15 @@ class PaymentGuideActivity : AppCompatActivity() {
             return
         }
 
-        // menuSummary를 아이템 리스트로 변환 (예시)
-        val items = menuSummary.split(",").map {
-            val parts = it.trim().split(" x ")
+        val cartItems = CartManager.getCartItems()
+
+        val items = cartItems.map {
             mapOf(
-                "name" to (parts.getOrNull(0) ?: ""),
-                "quantity" to (parts.getOrNull(1)?.toIntOrNull() ?: 1)
+                "name" to it.name,
+                "desc" to it.desc,
+                "category" to it.category,
+                "price" to it.price,
+                "quantity" to it.quantity
             )
         }
 
@@ -53,12 +56,12 @@ class PaymentGuideActivity : AppCompatActivity() {
             .collection("orders")
             .add(orderData)
             .addOnSuccessListener {
-                // 저장 성공 → 주문완료 화면 이동
                 val intent = Intent(this, OrderCompleteActivity::class.java).apply {
                     putExtra("shopName", shopName)
                     putExtra("totalPrice", totalPrice)
                     putExtra("menuSummary", menuSummary)
                 }
+                CartManager.clear()
                 startActivity(intent)
                 finish()
             }

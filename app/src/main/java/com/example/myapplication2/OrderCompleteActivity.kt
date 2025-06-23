@@ -23,7 +23,6 @@ class OrderCompleteActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.textViewTotalPrice).text = "총액: ${String.format("%,d원", totalPrice)}"
 
         // 메뉴 요약을 세로로 한 줄씩 출력
-        // menuSummary: "아메리카노 x 2, 카페라떼 x 1" -> "아메리카노 x 2\n카페라떼 x 1"
         val menuListString = menuSummary.split(",").joinToString(separator = "\n") { it.trim() }
         findViewById<TextView>(R.id.textViewMenuList).text = menuListString
 

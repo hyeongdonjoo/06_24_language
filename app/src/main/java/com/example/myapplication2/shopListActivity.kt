@@ -48,7 +48,7 @@ class ShopListActivity : AppCompatActivity() {
             if (success) {
                 handleScanResults()
             } else {
-                Log.e("WiFiScan", "스캔 실패 또는 결과 없음")
+                Log.e("WiFiScan", getString(R.string.scan_failed))
                 showNoWifiDetected()
             }
         }
@@ -91,7 +91,6 @@ class ShopListActivity : AppCompatActivity() {
             disableRefreshButtonWithCountdown()
         }
 
-        // ⭐️ 앱이 처음 열릴 때 자동 새로고침 실행!
         refreshWifiScan()
     }
 
@@ -137,14 +136,14 @@ class ShopListActivity : AppCompatActivity() {
     private fun startWifiScan() {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastScanTime < 10000) {
-            Toast.makeText(this, "⏱ 잠시 후 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.try_again_later), Toast.LENGTH_SHORT).show()
             progressBar.visibility = View.GONE
             return
         }
         lastScanTime = currentTime
 
         if (!wifiManager.isWifiEnabled) {
-            Toast.makeText(this, "📶 Wi-Fi가 꺼져 있습니다. 켜주세요.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.wifi_disabled), Toast.LENGTH_SHORT).show()
             showNoWifiDetected()
             return
         }
@@ -159,7 +158,7 @@ class ShopListActivity : AppCompatActivity() {
                 showNoWifiDetected()
             }
         } catch (e: SecurityException) {
-            Log.e("WiFiScan", "startScan() 권한 오류", e)
+            Log.e("WiFiScan", getString(R.string.scan_permission_error), e)
             showNoWifiDetected()
         }
     }
@@ -171,7 +170,7 @@ class ShopListActivity : AppCompatActivity() {
         for (result in scanResults) {
             val ssid = result.SSID
             val rssi = result.level
-            Log.d("WiFiScan", "📡 SSID: $ssid, RSSI: $rssi dBm")
+            Log.d("WiFiScan", getString(R.string.wifi_info_log, ssid, rssi))
 
             if (rssi > -60 && ssid.isNotBlank()) {
                 detectedSsids.add(ssid)
@@ -193,12 +192,12 @@ class ShopListActivity : AppCompatActivity() {
 
                 for (document in result) {
                     val name = document.getString("name") ?: continue
-                    val address = document.getString("address") ?: "주소 없음"
+                    val address = document.getString("address") ?: getString(R.string.no_address)
                     val ssid = document.getString("ssid") ?: continue
 
                     if (detectedSsids.contains(ssid)) {
                         shopList.add(Shop(name, address))
-                        Log.d("ShopListActivity", "📍감지된 가게: $name (SSID: $ssid)")
+                        Log.d("ShopListActivity", getString(R.string.detected_shop, name, ssid))
                     }
                 }
 
@@ -214,7 +213,7 @@ class ShopListActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { e ->
-                Log.e("ShopListActivity", "Firestore 불러오기 실패", e)
+                Log.e("ShopListActivity", getString(R.string.load_shop_failed), e)
                 progressBar.visibility = View.GONE
                 textViewNoShops.visibility = View.VISIBLE
                 recyclerViewShops.visibility = View.GONE
@@ -222,7 +221,7 @@ class ShopListActivity : AppCompatActivity() {
     }
 
     private fun showNoWifiDetected() {
-        Toast.makeText(this, "📡 근처에 등록된 Wi-Fi가 없습니다.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.no_wifi_detected), Toast.LENGTH_SHORT).show()
         progressBar.visibility = View.GONE
         recyclerViewShops.visibility = View.GONE
         textViewNoShops.visibility = View.VISIBLE
@@ -239,7 +238,7 @@ class ShopListActivity : AppCompatActivity() {
             grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startWifiScan()
         } else {
-            Toast.makeText(this, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.permission_required), Toast.LENGTH_SHORT).show()
             progressBar.visibility = View.GONE
             textViewNoShops.visibility = View.VISIBLE
         }

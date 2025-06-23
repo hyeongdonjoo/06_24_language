@@ -29,7 +29,7 @@ class CartActivity : AppCompatActivity() {
         buttonOrder = findViewById(R.id.buttonOrder)
         buttonBack = findViewById(R.id.buttonBack)
 
-        shopName = intent.getStringExtra("shopName") ?: "Unknown"
+        shopName = intent.getStringExtra("shopName") ?: getString(R.string.unknown_shop)
 
         buttonBack.setOnClickListener {
             finish()
@@ -39,7 +39,7 @@ class CartActivity : AppCompatActivity() {
 
         buttonOrder.setOnClickListener {
             if (CartManager.getCartItems().isEmpty()) {
-                Toast.makeText(this, "장바구니가 비어있습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.cart_empty), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -59,7 +59,7 @@ class CartActivity : AppCompatActivity() {
     }
 
     private fun formatPrice(price: Int): String {
-        return String.format("%,d원", price)
+        return getString(R.string.price_format, price)
     }
 
     private fun displayCartItems() {
@@ -99,10 +99,11 @@ class CartActivity : AppCompatActivity() {
                     item.quantity--
                     displayCartItems()
                 } else {
-                    Toast.makeText(this, "최소 수량은 1개입니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.min_quantity_warning), Toast.LENGTH_SHORT).show()
                 }
             }
 
+            buttonRemove.setText(R.string.remove)
             buttonRemove.setOnClickListener {
                 CartManager.removeItem(item)
                 displayCartItems()
@@ -111,17 +112,15 @@ class CartActivity : AppCompatActivity() {
             layoutCartItems.addView(itemView)
         }
 
-        textTotalPrice.text = "총합: ${formatPrice(CartManager.getTotalPrice())}"
+        textTotalPrice.text = getString(R.string.total_format, formatPrice(CartManager.getTotalPrice()))
     }
 
-    // sendOrderToFirebase는 더 이상 buttonOrder에서 직접 호출하지 않으므로,
-    // PaymentGuideActivity에서 결제 완료 시 호출하도록 별도로 사용할 수 있습니다.
     fun sendOrderToFirebase(shopName: String, menuSummary: String, totalPrice: Int) {
         val db = FirebaseFirestore.getInstance()
         val userId = FirebaseAuth.getInstance().currentUser?.uid
 
         if (userId == null) {
-            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.login_required), Toast.LENGTH_SHORT).show()
             buttonOrder.isEnabled = true
             return
         }
@@ -156,7 +155,7 @@ class CartActivity : AppCompatActivity() {
                 finish()
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "주문 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.order_failed, e.message), Toast.LENGTH_SHORT).show()
                 buttonOrder.isEnabled = true
             }
     }
